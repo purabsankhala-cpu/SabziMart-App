@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SabziMart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+
+    <style>
+        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background-color: #f1f5f9; margin: 0; padding: 0; color: #1e293b; }
+        .header { background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 18px 20px; text-align: center; font-size: 22px; font-weight: 700; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-bottom: 4px solid #0c9e4b; }
+        .header span { color: #0c9e4b; }
+        .container { padding: 15px; max-width: 600px; margin: 0 auto;}
+        .section-title { font-size: 18px; font-weight: 700; color: #334155; margin: 20px 0 10px; border-left: 4px solid #0c9e4b; padding-left: 10px; }
+        .add-product-box { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; }
+        .form-input { width: 100%; padding: 12px 15px; margin-bottom: 12px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 14px; outline: none; background: #f8fafc; transition: border 0.3s;}
+        .form-input:focus { border-color: #0c9e4b; background: white; }
+        .row { display: flex; justify-content: space-between; gap: 12px; }
+        
+        /* HD Photo Upload System */
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; margin-bottom: 12px; }
+        .file-upload-btn { border: 2px dashed #0c9e4b; color: #0c9e4b; background-color: #e8f7ee; padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; text-align: center; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.3s;}
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; }
+        #imagePreview { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; display: none; margin: 0 auto 15px auto; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+        .btn-add { background: #0c9e4b; color: white; width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 10px rgba(12, 158, 75, 0.2); transition: 0.2s;}
+        .btn-add:active { transform: scale(0.98); }
+        
+        .live-products-list { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px;}
+        .mini-prod-card { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 12px; border: 1px solid #e2e8f0;}
+        .mini-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; background: #f1f5f9; }
+        .mini-details { flex: 1; }
+        .mini-title { font-size: 14px; font-weight: 700; color: #1e293b; }
+        .mini-price { font-size: 13px; color: #0c9e4b; font-weight: 600; }
+        .del-btn { color: #ef4444; font-size: 18px; cursor: pointer; background: transparent; border: none; padding: 8px; }
+
+        .order-card { background: white; border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 5px solid #0c9e4b; border-right: 1px solid #eee; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+        .order-header { display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 12px; margin-bottom: 12px; }
+        .cust-name { font-size: 16px; font-weight: 700; color: #0f172a; }
+        .order-time { font-size: 12px; color: #64748b; font-weight: 500; }
+        .order-details { font-size: 14px; line-height: 1.6; color: #475569; }
+        .order-details b { color: #1e293b; }
+        .items-list { background: #f8fafc; padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 13px; font-weight: 600; color: #334155; border: 1px solid #e2e8f0; }
+        .total-bill { font-size: 18px; font-weight: 800; color: #0c9e4b; text-align: right; margin-top: 10px; }
+        .status-badge { display: inline-block; padding: 6px 12px; background: #e8f7ee; color: #0c9e4b; border-radius: 8px; font-size: 12px; font-weight: 700; margin-top: 10px; text-transform: uppercase; }
+        .status-badge.new { background: #fffbeb; color: #d97706; }
+    </style>
+</head>
+<body>
+    <div class="header">Sabzi<span>Mart</span> Admin</div>
+    <div class="container">
+        <div class="section-title">📦 Add New Product</div>
+        <div class="add-product-box">
+            <div class="file-upload-wrapper">
+                <div class="file-upload-btn"><i class="fas fa-camera"></i> Select Photo from Gallery</div>
+                <input type="file" id="pImageFile" accept="image/*">
+            </div>
+            <canvas id="imageCanvas" style="display:none;"></canvas>
+            <img id="imagePreview" src="">
+
+            <input type="text" id="pName" class="form-input" placeholder="Product Name (e.g. Fresh Tomato)">
+            <div class="row">
+                <input type="text" id="pQty" class="form-input" placeholder="Base Qty (e.g. 1 Kilo)">
+                <input type="number" id="pPrice" class="form-input" placeholder="Base Price (₹)">
+            </div>
+            <button class="btn-add" onclick="addNewProduct()">Add to Live Shop</button>
+        </div>
+
+        <div class="section-title">🏪 Currently in Shop</div>
+        <div id="liveProductsContainer" class="live-products-list"><span style="color:#888; font-size:13px;">Loading shop items...</span></div>
+
+        <div class="section-title">🚨 Live Orders</div>
+        <div id="ordersContainer"><div style="color: #888; font-size: 14px;">Loading Live Orders...</div></div>
+    </div>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyOtQ-LNPGiBZqAayWv-8pY2UDl_tHVicyM", authDomain: "sabzimart-3d585.firebaseapp.com", databaseURL: "https://sabzimart-3d585-default-rtdb.firebaseio.com", projectId: "sabzimart-3d585", storageBucket: "sabzimart-3d585.firebasestorage.app", messagingSenderId: "753632355469", appId: "1:753632355469:web:507f266899005ec65a2ec4" };
+        firebase.initializeApp(firebaseConfig); const database = firebase.database();
+
+        let finalBase64Image = "";
+
+        // SMART HD COMPRESSOR
+        document.getElementById('pImageFile').addEventListener('change', function(e) {
+            let file = e.target.files[0]; if(!file) return;
+            document.querySelector('.file-upload-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Photo...';
+            let reader = new FileReader();
+            reader.onload = function(event) {
+                let img = new Image();
+                img.onload = function() {
+                    let canvas = document.getElementById('imageCanvas'); let ctx = canvas.getContext('2d');
+                    let MAX_WIDTH = 800; // UPGRADED TO HD QUALITY
+                    let scaleSize = MAX_WIDTH / img.width;
+                    if(img.width < MAX_WIDTH) { scaleSize = 1; }
+                    canvas.width = img.width * scaleSize; canvas.height = img.height * scaleSize;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    finalBase64Image = canvas.toDataURL('image/jpeg', 0.85); // High Quality
+                    let preview = document.getElementById('imagePreview');
+                    preview.src = finalBase64Image; preview.style.display = 'block';
+                    document.querySelector('.file-upload-btn').innerHTML = '<i class="fas fa-check-circle"></i> Photo Ready!';
+                    document.querySelector('.file-upload-btn').style.backgroundColor = '#d1fae5';
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        function addNewProduct() {
+            let name = document.getElementById('pName').value; let qty = document.getElementById('pQty').value; let price = document.getElementById('pPrice').value;
+            if(!name || !qty || !price) { alert("Please fill Name, Qty and Price!"); return; }
+            let productData = { emoji: "🛒", name: name, qty: qty, price: parseInt(price), imageUrl: finalBase64Image };
+            let btn = document.querySelector('.btn-add'); btn.innerText = "Adding...";
+            database.ref('LiveProducts').push(productData).then(() => {
+                alert("Product Added Successfully!");
+                document.getElementById('pName').value = ""; document.getElementById('pQty').value = ""; document.getElementById('pPrice').value = ""; finalBase64Image = "";
+                document.getElementById('imagePreview').style.display = 'none'; document.getElementById('imagePreview').src = "";
+                document.querySelector('.file-upload-btn').innerHTML = '<i class="fas fa-camera"></i> Select Photo from Gallery'; document.querySelector('.file-upload-btn').style.backgroundColor = '#e8f7ee';
+                btn.innerText = "Add to Live Shop";
+            });
+        }
+
+        database.ref('LiveProducts').on('value', (snapshot) => {
+            let container = document.getElementById('liveProductsContainer'); container.innerHTML = ''; 
+            if(snapshot.exists()) {
+                let products = snapshot.val();
+                for (let id in products) {
+                    let p = products[id];
+                    let displayImg = p.imageUrl ? `<img src="${p.imageUrl}" class="mini-img">` : `<div class="mini-img" style="font-size:30px; display:flex; align-items:center; justify-content:center;">${p.emoji}</div>`;
+                    container.innerHTML += `<div class="mini-prod-card">${displayImg}<div class="mini-details"><div class="mini-title">${p.name} (${p.qty})</div><div class="mini-price">₹${p.price}</div></div><button class="del-btn" onclick="deleteProduct('${id}')"><i class="fas fa-trash-alt"></i></button></div>`;
+                }
+            } else { container.innerHTML = '<span style="color:#888; font-size:13px;">Shop is empty. Add products above.</span>'; }
+        });
+
+        function deleteProduct(id) { if(confirm("Are you sure you want to remove this item?")) { database.ref('LiveProducts/' + id).remove(); } }
+
+        database.ref('LiveOrders').on('value', (snapshot) => {
+            let ordersContainer = document.getElementById('ordersContainer'); ordersContainer.innerHTML = ''; 
+            if(snapshot.exists()) {
+                let orders = snapshot.val();
+                for (let orderId in orders) {
+                    let data = orders[orderId]; let itemsString = data.itemsOrdered ? data.itemsOrdered.join("<br>• ") : "No items"; let badgeClass = data.orderStatus === "New Order" ? "status-badge new" : "status-badge";
+                    let cardHTML = `<div class="order-card"><div class="order-header"><div class="cust-name">👤 ${data.customerName}</div><div class="order-time">🕒 ${data.orderTime.split(',')[1]}</div></div><div class="order-details"><div><b>📞</b> <a href="tel:${data.customerPhone}" style="color:#0c9e4b; text-decoration:none;">${data.customerPhone}</a></div><div style="margin-top:5px;"><b>🏠</b> ${data.customerAddress}</div><div class="items-list">• ${itemsString}</div></div><div class="total-bill">Total: ₹${data.totalBillAmount}</div><div class="${badgeClass}">${data.orderStatus}</div></div>`;
+                    ordersContainer.innerHTML = cardHTML + ordersContainer.innerHTML; 
+                }
+            } else { ordersContainer.innerHTML = '<div style="color: #888; font-size: 14px;">No orders yet.</div>'; }
+        });
+    </script>
+</body>
+</html>
